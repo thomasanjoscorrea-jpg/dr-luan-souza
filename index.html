@@ -101,7 +101,14 @@ body::after {
 .hero-photo video {
   display: block; width: 100%; height: 100%; object-fit: cover;
   animation: fade 700ms ease both;
+  pointer-events: none; /* o vídeo é fundo: não recebe toque, então o navegador não mostra play/pause */
 }
+/* esconde os botões nativos que alguns celulares desenham sobre vídeos */
+.hero-photo video::-webkit-media-controls,
+.hero-photo video::-webkit-media-controls-panel,
+.hero-photo video::-webkit-media-controls-play-button,
+.hero-photo video::-webkit-media-controls-start-playback-button,
+.hero-photo video::-webkit-media-controls-overlay-play-button { display: none !important; -webkit-appearance: none; opacity: 0 !important; }
 .hero-photo::after {
   content: ""; position: absolute; inset: 0;
   background:
@@ -312,7 +319,7 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--halo); outline-
 
   <div class="stage">
     <div class="hero-photo">
-      <video id="hero-video" src="hero.mp4" poster="poster.jpg" autoplay muted loop playsinline preload="auto" disablepictureinpicture aria-label="Dr. Luan Souza explicando, no consultório" width="720" height="1000"></video>
+      <video id="hero-video" src="hero.mp4?v=2" poster="poster.jpg" autoplay muted loop playsinline webkit-playsinline x5-playsinline preload="auto" disablepictureinpicture disableremoteplayback controlslist="nodownload nofullscreen noremoteplayback" tabindex="-1" aria-label="Dr. Luan Souza explicando, no consultório" width="720" height="1000"></video>
     </div>
     <div class="veil" id="veil"></div>
     <div class="hero-top pad">
@@ -408,15 +415,36 @@ document.documentElement.classList.add('js');
   new IntersectionObserver(function (es) { inviteIn = es[0].isIntersecting; upd(); }, { threshold: .2 }).observe(invite);
 })();
 
-// vídeo do topo: com movimento reduzido fica parado no primeiro quadro;
-// se o celular bloquear o autoplay (modo economia), a capa continua aparecendo
+// vídeo do topo: roda sempre, sem parar.
+// O celular só deixa tocar sozinho se o vídeo estiver mudo; marcamos isso no próprio
+// elemento antes de pedir o play. Se o navegador bloquear mesmo assim (modo economia,
+// navegador do Instagram), tentamos de novo no primeiro toque ou rolagem da pessoa.
 (function () {
   var v = document.getElementById('hero-video');
   if (!v) return;
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { v.removeAttribute('autoplay'); v.pause(); return; }
-  var p = v.play(); if (p && p.catch) p.catch(function () {});
-  // pausa quando a aba fica em segundo plano, para poupar bateria
-  document.addEventListener('visibilitychange', function () { if (document.hidden) v.pause(); else v.play().catch(function () {}); });
+  v.muted = true; v.defaultMuted = true; v.setAttribute('muted', '');
+  v.loop = true; v.playsInline = true;
+
+  function play() {
+    if (document.hidden) return;
+    var p = v.play();
+    if (p && p.catch) p.catch(function () {});
+  }
+  play();
+  v.addEventListener('loadeddata', play);
+  v.addEventListener('canplay', play);
+
+  // se algo pausar o vídeo (sistema, fim de loop em navegadores antigos), ele volta a tocar
+  v.addEventListener('pause', function () { if (!document.hidden) setTimeout(play, 60); });
+  v.addEventListener('ended', function () { v.currentTime = 0; play(); });
+
+  // primeira interação da pessoa destrava o autoplay em navegadores mais restritos
+  ['touchstart', 'pointerdown', 'scroll', 'keydown'].forEach(function (ev) {
+    window.addEventListener(ev, play, { passive: true, once: true });
+  });
+
+  // aba em segundo plano: pausa para poupar bateria; ao voltar, continua
+  document.addEventListener('visibilitychange', function () { if (document.hidden) v.pause(); else play(); });
 })();
 
 // véu escurece a foto fixa conforme o conteúdo sobe por cima dela
