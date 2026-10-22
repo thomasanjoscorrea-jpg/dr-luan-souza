@@ -13,7 +13,7 @@
 <meta property="og:title" content="Dr. Luan Souza · Cirurgião-Dentista">
 <meta property="og:description" content="Clínica Vizon Saúde, Vilhena-RO. Agende pelo WhatsApp.">
 <!-- imagem que aparece quando o link é enviado no WhatsApp ou Instagram -->
-<meta property="og:image" content="https://thomasanjoscorrea-jpg.github.io/dr-luan-souza/poster.jpg?v=2">
+<meta property="og:image" content="https://thomasanjoscorrea-jpg.github.io/dr-luan-souza/poster.jpg?v=3">
 <meta property="og:image:width" content="720">
 <meta property="og:image:height" content="1000">
 <meta property="og:image:alt" content="Dr. Luan Souza, cirurgião-dentista">
@@ -21,7 +21,7 @@
 <link rel="canonical" href="https://thomasanjoscorrea-jpg.github.io/dr-luan-souza/">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23050b1c'/%3E%3Ctext x='32' y='43' font-family='Georgia,serif' font-size='30' fill='%237fa2ff' text-anchor='middle'%3ELS%3C/text%3E%3C/svg%3E">
 <!-- a capa aparece na hora enquanto a imagem animada carrega -->
-<link rel="preload" as="image" href="poster.jpg?v=2" fetchpriority="high">
+<link rel="preload" as="image" href="poster.jpg?v=3" fetchpriority="high">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&display=swap">
@@ -120,7 +120,7 @@ a { color: inherit; }
 /* A foto fica presa no topo (sticky) e não se mexe; o conteúdo desliza por cima
    e um véu escuro cresce com a rolagem. Altura = proporção do vídeo (720x1000). */
 .stage { position: sticky; top: 0; z-index: 0; aspect-ratio: 720 / 1000; max-width: 100%; }
-.hero-photo { position: absolute; inset: 0; overflow: hidden; background: #1a2340 url("poster.jpg?v=2") center / cover no-repeat; }
+.hero-photo { position: absolute; inset: 0; overflow: hidden; background: #1a2340 url("poster.jpg?v=3") center / cover no-repeat; }
 .hero-photo img, .hero-photo video {
   position: absolute; inset: 0;
   display: block; width: 100%; height: 100%; object-fit: cover;
@@ -351,7 +351,7 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--halo); outline-
 
   <div class="stage">
     <div class="hero-photo">
-      <video id="hero-video" src="hero.mp4?v=3" muted autoplay loop playsinline webkit-playsinline preload="auto" disablepictureinpicture disableremoteplayback tabindex="-1" aria-label="Dr. Luan Souza explicando, no consultório" width="720" height="1000"></video>
+      <video id="hero-video" src="hero.mp4?v=4" muted autoplay loop playsinline webkit-playsinline preload="auto" disablepictureinpicture disableremoteplayback tabindex="-1" aria-label="Dr. Luan Souza explicando, no consultório" width="720" height="1000"></video>
     </div>
     <div class="veil" id="veil"></div>
     <div class="hero-top pad">
@@ -470,8 +470,8 @@ document.documentElement.classList.add('js');
       img = new Image();
       img.alt = v.getAttribute('aria-label') || '';
       img.decoding = 'async';
-      img.width = 432; img.height = 600;
-      img.src = 'hero.webp?v=6';
+      img.width = 360; img.height = 500;
+      img.src = 'hero.webp?v=7';
       v.parentNode.insertBefore(img, v);
       v.pause(); v.removeAttribute('src'); v.load(); v.remove(); v = null;
       if (covered) img.style.display = 'none';
@@ -489,10 +489,23 @@ document.documentElement.classList.add('js');
     });
   }
 
+  // Coberto: a animação some suavemente e fica a capa (quadro escolhido, de boca
+  // fechada) em vez de congelar num quadro qualquer. Ao voltar, ela recomeça.
+  var hideTimer = null;
   function setCovered(c) {
     if (c === covered) return;
     covered = c;
-    if (mode === 'video' && v) { if (c) v.pause(); else playVideo(); }
+    clearTimeout(hideTimer);
+    if (mode === 'video' && v) {
+      if (c) {
+        v.classList.remove('on');
+        hideTimer = setTimeout(function () { if (covered && v) v.pause(); }, 500);
+      } else {
+        var q = v.play();
+        var show = function () { if (!covered && v) v.classList.add('on'); };
+        if (q && q.then) q.then(show, function () {}); else show();
+      }
+    }
     if (mode === 'img' && img) img.style.display = c ? 'none' : '';
   }
 
