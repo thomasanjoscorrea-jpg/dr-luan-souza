@@ -114,6 +114,7 @@ a { color: inherit; }
   opacity: 0; transition: opacity 400ms ease;
   will-change: transform;
 }
+@media (hover: none), (pointer: coarse) { .spot { display: none; } }
 
 /* ---------- Abertura ---------- */
 /* A foto fica presa no topo (sticky) e não se mexe; o conteúdo desliza por cima
@@ -448,22 +449,17 @@ document.documentElement.classList.add('js');
 
 // Topo: tenta o vídeo (leve, o celular decodifica com hardware). Ele só aparece quando
 // está tocando de verdade. Se o celular bloquear o autoplay (modo economia, navegador
-// do Instagram), troca pela imagem animada WebP, que não tem botão de play.
+// do Instagram), o vídeo sai e fica a foto parada (capa) que já está por baixo.
+// Não usamos imagem animada como reserva: ela é decodificada no processador e trava a rolagem.
 (function () {
   var v = document.getElementById('hero-video');
   if (!v) return;
-  var box = v.parentNode, done = false;
+  var done = false;
   v.muted = true; v.defaultMuted = true; v.playsInline = true;
 
   function ok() { if (done) return; done = true; v.classList.add('on'); }
   function fallback() {
     if (done) return; done = true;
-    var img = new Image();
-    img.alt = v.getAttribute('aria-label') || '';
-    img.decoding = 'async';
-    img.src = 'hero.webp?v=3';
-    img.width = 720; img.height = 1000;
-    box.insertBefore(img, v);
     v.pause(); v.removeAttribute('src'); v.load(); v.remove();
   }
 
