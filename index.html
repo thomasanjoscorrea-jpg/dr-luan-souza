@@ -467,12 +467,21 @@ document.documentElement.classList.add('js');
     var ok = function () { if (decided) return; decided = true; v.classList.add('on'); };
     var fallback = function () {
       if (decided) return; decided = true; mode = 'img';
-      img = new Image();
-      img.alt = v.getAttribute('aria-label') || '';
-      img.decoding = 'async';
-      img.width = 360; img.height = 500;
-      img.src = 'hero.webp?v=7';
-      v.parentNode.insertBefore(img, v);
+      // <picture>: o iPhone (Safari e o navegador do Instagram) aceita o próprio MP4
+      // como imagem — decodificado pelo chip de vídeo, liso e sem bloqueio de autoplay.
+      // Os outros navegadores ignoram essa opção e usam a imagem animada WebP.
+      var pic = document.createElement('picture');
+      var src = document.createElement('source');
+      src.type = 'video/mp4'; src.srcset = 'hero.mp4?v=4';
+      pic.appendChild(src);
+      var im = new Image();
+      im.alt = v.getAttribute('aria-label') || '';
+      im.decoding = 'async';
+      im.width = 720; im.height = 1000;
+      im.src = 'hero.webp?v=7';
+      pic.appendChild(im);
+      v.parentNode.insertBefore(pic, v);
+      img = pic;
       v.pause(); v.removeAttribute('src'); v.load(); v.remove(); v = null;
       if (covered) img.style.display = 'none';
     };
