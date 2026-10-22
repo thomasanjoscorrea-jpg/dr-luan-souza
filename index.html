@@ -470,8 +470,8 @@ document.documentElement.classList.add('js');
       img = new Image();
       img.alt = v.getAttribute('aria-label') || '';
       img.decoding = 'async';
-      img.width = 400; img.height = 556;
-      img.src = 'hero.webp?v=4';
+      img.width = 432; img.height = 600;
+      img.src = 'hero.webp?v=5';
       v.parentNode.insertBefore(img, v);
       v.pause(); v.removeAttribute('src'); v.load(); v.remove(); v = null;
       if (covered) img.style.display = 'none';
@@ -481,6 +481,9 @@ document.documentElement.classList.add('js');
     var p = v.play();
     if (p && p.catch) p.catch(function (e) { if (e && e.name === 'NotAllowedError') fallback(); });
     // vídeo carregado mas parado sem motivo = bloqueado sem avisar
+    // modo economia de bateria: o vídeo nem carrega e não avisa nada. Se não começou
+    // a tocar em 1,5s, troca para a animação em vez de ficar parado na capa.
+    setTimeout(function () { if (!decided) fallback(); }, 1500);
     v.addEventListener('canplay', function () {
       setTimeout(function () { if (!decided && !covered && v && v.paused) fallback(); }, 700);
     });
