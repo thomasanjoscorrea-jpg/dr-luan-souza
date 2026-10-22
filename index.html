@@ -447,53 +447,70 @@ document.documentElement.classList.add('js');
   new IntersectionObserver(function (es) { inviteIn = es[0].isIntersecting; upd(); }, { threshold: .2 }).observe(invite);
 })();
 
-// Topo: tenta o vídeo (leve, o celular decodifica com hardware). Ele só aparece quando
-// está tocando de verdade. Se o celular bloquear o autoplay (modo economia, navegador
-// do Instagram), o vídeo sai e fica a foto parada (capa) que já está por baixo.
-// Não usamos imagem animada como reserva: ela é decodificada no processador e trava a rolagem.
+// Topo animado + véu.
+// 1) Tenta o vídeo (leve: o celular decodifica com o chip de vídeo). Ele só aparece
+//    quando está tocando de verdade, então o botão de play nunca aparece.
+// 2) Se o celular bloquear o autoplay (modo economia, navegador do Instagram), troca
+//    por uma imagem animada leve (WebP 400px, 12 qps).
+// 3) Enquanto a pessoa rola e o conteúdo cobre o topo, a animação PAUSA e fica a capa
+//    parada por baixo do véu escuro. Era a animação rodando escondida atrás da página
+//    inteira que travava a rolagem no celular. Ao voltar para o topo, ela recomeça.
 (function () {
   var v = document.getElementById('hero-video');
-  if (!v) return;
-  var done = false;
-  v.muted = true; v.defaultMuted = true; v.playsInline = true;
+  var veil = document.getElementById('veil'), st = document.querySelector('.stage'), top = document.querySelector('.hero-top');
+  var mode = v ? 'video' : 'none', img = null, decided = false, covered = false;
 
-  function ok() { if (done) return; done = true; v.classList.add('on'); }
-  function fallback() {
-    if (done) return; done = true;
-    v.pause(); v.removeAttribute('src'); v.load(); v.remove();
+  function playVideo() { var q = v.play(); if (q && q.catch) q.catch(function () {}); }
+
+  if (v) {
+    v.muted = true; v.defaultMuted = true; v.playsInline = true;
+    var ok = function () { if (decided) return; decided = true; v.classList.add('on'); };
+    var fallback = function () {
+      if (decided) return; decided = true; mode = 'img';
+      img = new Image();
+      img.alt = v.getAttribute('aria-label') || '';
+      img.decoding = 'async';
+      img.width = 400; img.height = 556;
+      img.src = 'hero.webp?v=4';
+      v.parentNode.insertBefore(img, v);
+      v.pause(); v.removeAttribute('src'); v.load(); v.remove(); v = null;
+      if (covered) img.style.display = 'none';
+    };
+    v.addEventListener('playing', ok);
+    v.addEventListener('timeupdate', function () { if (v && v.currentTime > 0.05) ok(); });
+    var p = v.play();
+    if (p && p.catch) p.catch(function (e) { if (e && e.name === 'NotAllowedError') fallback(); });
+    // vídeo carregado mas parado sem motivo = bloqueado sem avisar
+    v.addEventListener('canplay', function () {
+      setTimeout(function () { if (!decided && !covered && v && v.paused) fallback(); }, 700);
+    });
   }
 
-  v.addEventListener('playing', ok);
-  v.addEventListener('timeupdate', function () { if (v.currentTime > 0.05) ok(); });
-  var p = v.play();
-  if (p && p.catch) p.catch(function (e) { if (e && e.name === 'NotAllowedError') fallback(); });
-  // vídeo já carregado mas parado = bloqueado sem avisar. Em internet lenta ele só
-  // está carregando, então não troca: a capa continua aparecendo até ele tocar.
-  v.addEventListener('canplay', function () {
-    setTimeout(function () { if (!done && v.paused) fallback(); }, 700);
-  });
+  function setCovered(c) {
+    if (c === covered) return;
+    covered = c;
+    if (mode === 'video' && v) { if (c) v.pause(); else playVideo(); }
+    if (mode === 'img' && img) img.style.display = c ? 'none' : '';
+  }
 
-  // aba em segundo plano: pausa para poupar bateria; ao voltar, continua
-  document.addEventListener('visibilitychange', function () {
-    if (!v.isConnected) return;
-    if (document.hidden) v.pause(); else { var q = v.play(); if (q && q.catch) q.catch(function () {}); }
-  });
-})();
-
-// véu escurece a foto fixa conforme o conteúdo sobe por cima dela
-(function () {
-  var v = document.getElementById('veil'), st = document.querySelector('.stage'), top = document.querySelector('.hero-top');
-  if (!v || !st) return;
   var ticking = false;
   function upd() {
-    var h = st.offsetHeight || 1, p = Math.max(0, window.scrollY / (h * 0.9));
-    v.style.opacity = Math.min(0.82, p * 0.82).toFixed(3);
+    var h = (st && st.offsetHeight) || 1, p = Math.max(0, window.scrollY / (h * 0.9));
+    if (veil) veil.style.opacity = Math.min(0.82, p * 0.82).toFixed(3);
     // os rótulos do topo somem antes de o texto chegar neles
     if (top) top.style.opacity = Math.max(0, 1 - p * 3).toFixed(3);
+    // topo praticamente coberto: pausa a animação
+    setCovered(p > 0.9);
     ticking = false;
   }
   window.addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(upd); } }, { passive: true });
   upd();
+
+  // aba em segundo plano: pausa para poupar bateria; ao voltar, continua se o topo estiver visível
+  document.addEventListener('visibilitychange', function () {
+    if (mode !== 'video' || !v) return;
+    if (document.hidden) v.pause(); else if (!covered) playVideo();
+  });
 })();
 
 // luz que acompanha o mouse com inércia de mola (só com mouse, nunca no toque)
