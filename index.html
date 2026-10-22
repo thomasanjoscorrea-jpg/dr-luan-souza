@@ -342,6 +342,17 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--halo); outline-
   .spot { display: none; }
 }
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* Celular: o topo deixa de ser fixo e sobe junto com a página. Com ele fixo, o aparelho
+   recompunha a animação com todo o conteúdo a cada quadro da rolagem, e travava.
+   Sem o fixo, quando a animação sai da tela o celular para de processá-la sozinho.
+   As entradas animadas das seções também ficam desligadas no celular. */
+@media (hover: none), (pointer: coarse) {
+  .stage { position: relative; }
+  .veil { display: none; }
+  .rv { transition: none; }
+  .js .rv.wait { transform: none; opacity: 1; }
+}
 </style>
 </head>
 <body>
