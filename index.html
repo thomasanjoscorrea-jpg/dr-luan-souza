@@ -73,11 +73,14 @@ body {
 img { max-width: 100%; display: block; }
 a { color: inherit; }
 
-/* grão de filme sobre tudo */
-body::after {
-  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 50;
-  opacity: .07; mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+/* grão de filme: só no computador. No celular, uma camada de mistura em tela cheia
+   por cima do vídeo obriga o aparelho a recompor tudo a cada quadro. */
+@media (hover: hover) and (pointer: fine) {
+  body::after {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 50;
+    opacity: .07; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
 }
 
 .page { position: relative; max-width: 480px; margin: 0 auto; overflow: hidden; overflow: clip; }
@@ -90,11 +93,17 @@ body::after {
   padding-right: max(24px, env(safe-area-inset-right, 0px));
 }
 
-/* luzes ambiente que respiram */
-.orb { position: absolute; border-radius: 50%; filter: blur(60px); pointer-events: none; z-index: 0; }
-.orb.a { width: 360px; height: 360px; left: -120px; top: 40px; background: rgba(61,107,255,.55); animation: drift 14s ease-in-out infinite alternate; }
-.orb.b { width: 300px; height: 300px; right: -140px; top: 260px; background: rgba(127,162,255,.35); animation: drift 18s ease-in-out infinite alternate-reverse; }
-.orb.c { width: 420px; height: 420px; left: -60px; bottom: 200px; background: rgba(61,107,255,.22); animation: drift 22s ease-in-out infinite alternate; }
+/* luzes ambiente: degradê radial em vez de desfoque (filter: blur custa caro no celular).
+   Só respiram no computador; no celular ficam paradas. */
+.orb { position: absolute; border-radius: 50%; pointer-events: none; z-index: 0; }
+.orb.a { width: 520px; height: 520px; left: -200px; top: -40px; background: radial-gradient(circle, rgba(61,107,255,.45), transparent 62%); }
+.orb.b { width: 440px; height: 440px; right: -210px; top: 190px; background: radial-gradient(circle, rgba(127,162,255,.28), transparent 62%); }
+.orb.c { width: 600px; height: 600px; left: -150px; bottom: 110px; background: radial-gradient(circle, rgba(61,107,255,.2), transparent 62%); }
+@media (hover: hover) and (pointer: fine) {
+  .orb.a { animation: drift 14s ease-in-out infinite alternate; }
+  .orb.b { animation: drift 18s ease-in-out infinite alternate-reverse; }
+  .orb.c { animation: drift 22s ease-in-out infinite alternate; }
+}
 @keyframes drift { from { transform: translate(0,0) scale(1); } to { transform: translate(40px, 30px) scale(1.15); } }
 
 /* luz que segue o mouse (só com mouse; no toque não faz sentido) */
@@ -112,12 +121,19 @@ body::after {
 .stage { position: sticky; top: 0; z-index: 0; aspect-ratio: 720 / 1000; max-width: 100%; }
 .hero-photo { position: absolute; inset: 0; overflow: hidden; background: #1a2340 url("poster.jpg?v=2") center / cover no-repeat; }
 .hero-photo img, .hero-photo video {
+  position: absolute; inset: 0;
   display: block; width: 100%; height: 100%; object-fit: cover;
-  animation: fade 700ms ease both;
-  /* imagem animada (WebP) em vez de vídeo: não tem play/pause e o celular
-     não bloqueia em modo economia nem no navegador do Instagram */
   pointer-events: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
 }
+/* O vídeo fica invisível até realmente começar a tocar: assim o botão de play que o
+   celular desenha quando bloqueia o autoplay nunca aparece. Se bloquear, o script
+   troca o vídeo pela imagem animada (WebP). */
+.hero-photo video { opacity: 0; transition: opacity 500ms ease; }
+.hero-photo video.on { opacity: 1; }
+.hero-photo img { animation: fade 500ms ease both; }
+.hero-photo video::-webkit-media-controls,
+.hero-photo video::-webkit-media-controls-start-playback-button,
+.hero-photo video::-webkit-media-controls-overlay-play-button { display: none !important; }
 .hero-photo::after {
   content: ""; position: absolute; inset: 0;
   background:
@@ -163,8 +179,8 @@ h1 em { display: block; font-size: .42em; color: var(--mist); letter-spacing: 0;
   background-size: 260% 100%; background-position: 100% 0;
   -webkit-background-clip: text; background-clip: text; color: transparent;
   animation: sweep 1.6s var(--ease-in-out) 900ms both;
-  filter: drop-shadow(0 0 28px rgba(61,107,255,.45));
 }
+@media (hover: hover) and (pointer: fine) { .shine { filter: drop-shadow(0 0 28px rgba(61,107,255,.45)); } }
 @keyframes sweep { from { background-position: 100% 0; } to { background-position: 0% 0; } }
 .hero-sub { margin: 0; max-width: 30ch; color: rgba(244,246,251,.82); font-size: 16.5px; }
 
@@ -196,8 +212,7 @@ h1 em { display: block; font-size: .42em; color: var(--mist); letter-spacing: 0;
 .glass {
   position: absolute; z-index: 2; left: 14px; right: 14px; bottom: 14px;
   padding: 14px 16px; border-radius: 18px;
-  background: rgba(10,22,52,.45);
-  -webkit-backdrop-filter: blur(18px) saturate(140%); backdrop-filter: blur(18px) saturate(140%);
+  background: rgba(10,22,52,.82); /* fundo quase sólido no celular: vidro desfocado pesa na rolagem */
   border: 1px solid rgba(244,246,251,.14);
   display: flex; flex-direction: column; gap: 2px;
 }
@@ -205,7 +220,7 @@ h1 em { display: block; font-size: .42em; color: var(--mist); letter-spacing: 0;
 .glass span { color: var(--mist); font-size: 13.5px; }
 .glass small {
   position: absolute; right: 12px; top: -40px;
-  background: rgba(5,11,28,.5); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  background: rgba(5,11,28,.78);
   font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--pearl);
   border: 1px solid rgba(244,246,251,.2); border-radius: 999px; padding: 7px 10px; white-space: nowrap;
 }
@@ -252,7 +267,14 @@ h1 em { display: block; font-size: .42em; color: var(--mist); letter-spacing: 0;
   padding: 2px;
   background: conic-gradient(from var(--ang, 0deg), transparent 0 70%, rgba(255,255,255,.9) 80%, transparent 90%);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
-  animation: orbit 3.2s linear infinite;
+}
+/* a luz girando na borda redesenha o botão a cada quadro: só no computador */
+@media (hover: hover) and (pointer: fine) { .btn::before { animation: orbit 3.2s linear infinite; } }
+@media (hover: none), (pointer: coarse) {
+  .glass { -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+@media (hover: hover) and (pointer: fine) {
+  .glass { background: rgba(10,22,52,.45); -webkit-backdrop-filter: blur(18px) saturate(140%); backdrop-filter: blur(18px) saturate(140%); }
 }
 @property --ang { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
 @keyframes orbit { to { --ang: 360deg; } }
@@ -301,14 +323,14 @@ footer { position: relative; z-index: 2; text-align: center; color: rgba(142,155
 a:focus-visible, button:focus-visible { outline: 2px solid var(--halo); outline-offset: 4px; }
 
 /* entrada dos blocos, a partir de um estado já legível */
-.rv { transition: transform 800ms var(--ease-out), opacity 800ms var(--ease-out), filter 800ms var(--ease-out); }
-.js .rv.wait { transform: translateY(20px); opacity: .25; filter: blur(3px); }
+.rv { transition: transform 800ms var(--ease-out), opacity 800ms var(--ease-out); }
+.js .rv.wait { transform: translateY(20px); opacity: .25; }
 
 /* movimento reduzido: menos e mais suave, não zero. Mantém os esmaecimentos, tira deslocamentos. */
 @media (prefers-reduced-motion: reduce) {
   .orb, .shine, .scroll-cue span, .btn::before { animation: none; }
   .shine { background-position: 0 0; }
-  .hero-photo img, .hero-photo video { animation: fade 400ms ease both; }
+  .hero-photo img { animation: fade 400ms ease both; }
   .hero-top, .hero-copy > * { animation: fade 400ms ease backwards; }
   .rv { transition: opacity 400ms ease; }
   .js .rv.wait { transform: none; filter: none; }
@@ -328,7 +350,7 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--halo); outline-
 
   <div class="stage">
     <div class="hero-photo">
-      <img id="hero-anim" src="hero.webp?v=2" alt="Dr. Luan Souza explicando, no consultório" width="720" height="1000" fetchpriority="high" decoding="async" draggable="false">
+      <video id="hero-video" src="hero.mp4?v=3" muted autoplay loop playsinline webkit-playsinline preload="auto" disablepictureinpicture disableremoteplayback tabindex="-1" aria-label="Dr. Luan Souza explicando, no consultório" width="720" height="1000"></video>
     </div>
     <div class="veil" id="veil"></div>
     <div class="hero-top pad">
@@ -354,7 +376,7 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--halo); outline-
 
   <section class="room pad rv">
     <div class="room-frame">
-      <img src="room.jpg?v=1" alt="Dr. Luan Souza no consultório da Clínica Vizon Saúde" width="720" height="900" loading="lazy" decoding="async">
+      <img src="room.jpg?v=2" alt="Dr. Luan Souza no consultório da Clínica Vizon Saúde" width="360" height="330" loading="lazy" decoding="async">
       <div class="glass">
         <b>Clínica Vizon Saúde</b>
         <span>Gestor e responsável técnico</span>
@@ -422,6 +444,44 @@ document.documentElement.classList.add('js');
   function upd() { dock.classList.toggle('on', heroOut && !inviteIn); }
   new IntersectionObserver(function (es) { heroOut = !es[0].isIntersecting; upd(); }, { threshold: .25 }).observe(hero);
   new IntersectionObserver(function (es) { inviteIn = es[0].isIntersecting; upd(); }, { threshold: .2 }).observe(invite);
+})();
+
+// Topo: tenta o vídeo (leve, o celular decodifica com hardware). Ele só aparece quando
+// está tocando de verdade. Se o celular bloquear o autoplay (modo economia, navegador
+// do Instagram), troca pela imagem animada WebP, que não tem botão de play.
+(function () {
+  var v = document.getElementById('hero-video');
+  if (!v) return;
+  var box = v.parentNode, done = false;
+  v.muted = true; v.defaultMuted = true; v.playsInline = true;
+
+  function ok() { if (done) return; done = true; v.classList.add('on'); }
+  function fallback() {
+    if (done) return; done = true;
+    var img = new Image();
+    img.alt = v.getAttribute('aria-label') || '';
+    img.decoding = 'async';
+    img.src = 'hero.webp?v=3';
+    img.width = 720; img.height = 1000;
+    box.insertBefore(img, v);
+    v.pause(); v.removeAttribute('src'); v.load(); v.remove();
+  }
+
+  v.addEventListener('playing', ok);
+  v.addEventListener('timeupdate', function () { if (v.currentTime > 0.05) ok(); });
+  var p = v.play();
+  if (p && p.catch) p.catch(function (e) { if (e && e.name === 'NotAllowedError') fallback(); });
+  // vídeo já carregado mas parado = bloqueado sem avisar. Em internet lenta ele só
+  // está carregando, então não troca: a capa continua aparecendo até ele tocar.
+  v.addEventListener('canplay', function () {
+    setTimeout(function () { if (!done && v.paused) fallback(); }, 700);
+  });
+
+  // aba em segundo plano: pausa para poupar bateria; ao voltar, continua
+  document.addEventListener('visibilitychange', function () {
+    if (!v.isConnected) return;
+    if (document.hidden) v.pause(); else { var q = v.play(); if (q && q.catch) q.catch(function () {}); }
+  });
 })();
 
 // véu escurece a foto fixa conforme o conteúdo sobe por cima dela
